@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Architect</title>
+    <style>
+        /* --- Clean, Vanilla CSS --- */
+        body { margin: 0; font-family: system-ui, -apple-system, sans-serif; display: flex; height: 100vh; background: #f4f4f5; }
+        * { box-sizing: border-box; }
+        
+        /* Layout */
+        .left-pane { width: 50%; padding: 3rem; background: white; display: flex; flex-direction: column; overflow-y: auto; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 10; }
+        .right-pane { width: 50%; padding: 3rem; background: #18181b; color: #e4e4e7; display: flex; flex-direction: column; overflow-y: auto; }
+        
+        /* Typography */
+        h1 { margin-top: 0; color: #18181b; font-size: 2rem; }
+        .subtitle { color: #71717a; margin-bottom: 2rem; }
+        label { font-weight: 600; font-size: 0.9rem; color: #3f3f46; margin-bottom: 0.5rem; display: block; }
+        
+        /* Inputs & Buttons */
+        .input-group { margin-bottom: 1.5rem; }
+        input[type="text"], textarea { w-full; width: 100%; padding: 0.75rem; border: 1px solid #d4d4d8; border-radius: 8px; font-family: inherit; font-size: 1rem; }
+        textarea { height: 250px; resize: none; }
+        input:focus, textarea:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.2); }
+        
+        button { background: #2563eb; color: white; border: none; padding: 1rem; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; width: 100%; }
+        button:hover { background: #1d4ed8; }
+        button:disabled { background: #93c5fd; cursor: not-allowed; }
+
+        /* Right Pane Results */
+        .score-card { background: #27272a; padding: 1.5rem; border-radius: 8px; border: 1px solid #3f3f46; margin-bottom: 1.5rem; }
+        .score-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .score-header h2 { margin: 0; font-size: 1.25rem; }
+        .score-badge { background: #064e3b; color: #34d399; padding: 0.25rem 1rem; border-radius: 20px; font-weight: bold; font-size: 1.25rem; }
+        .missing-skills { background: rgba(127, 29, 29, 0.2); border: 1px solid rgba(127, 29, 29, 0.5); color: #fca5a5; padding: 1rem; border-radius: 8px; font-size: 0.9rem; margin-top: 1rem; }
+        
+        .code-container { flex-grow: 1; display: flex; flex-direction: column; }
+        .code-header { background: #27272a; padding: 0.5rem 1rem; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; border: 1px solid #3f3f46; border-bottom: none; font-family: monospace; font-size: 0.8rem; color: #a1a1aa; }
+        .copy-btn { background: none; border: none; color: #a1a1aa; padding: 0; width: auto; font-weight: normal; font-size: 0.8rem; }
+        .copy-btn:hover { background: none; color: white; text-decoration: underline; }
+        .latex-output { width: 100%; flex-grow: 1; min-height: 400px; background: #09090b; color: #4ade80; padding: 1rem; font-family: monospace; border: 1px solid #3f3f46; border-radius: 0 0 8px 8px; resize: none; outline: none; }
+
+        /* States */
+        .hidden { display: none !important; }
+        .loading-state, .empty-state { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #71717a; text-align: center; }
+        
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: white; padding: 2rem; border-radius: 12px; max-width: 400px; width: 90%; }
+        .modal-content h3 { margin-top: 0; color: #18181b; }
+        .modal-content p { color: #52525b; line-height: 1.5; margin-bottom: 1.5rem; }
+        .modal-buttons { display: flex; gap: 1rem; }
+        .btn-fast { background: #dbeafe; color: #1e40af; }
+        .btn-fast:hover { background: #bfdbfe; }
+        .btn-fresh { background: #27272a; }
+        .btn-fresh:hover { background: #18181b; }
+    </style>
+</head>
+<body>
+
+    <div class="left-pane">
+        <h1>AI Resume Architect</h1>
+        <div class="subtitle">Generate ATS-optimized LaTeX resumes locally.</div>
+
+        <div class="input-group">
+            <label>GitHub Username</label>
+            <input type="text" id="username" value="prakhar383" placeholder="e.g., prakhar383">
+        </div>
+
+        <div class="input-group" style="flex-grow: 1; display: flex; flex-direction: column;">
+            <label>Job Description</label>
+            <textarea id="jd" placeholder="Paste the target job description here..."></textarea>
+        </div>
+
+        <button id="generate-btn">Generate LaTeX Resume</button>
+    </div>
+
+    <div class="right-pane">
+        
+        <div id="empty-state" class="empty-state">
+            <h2 style="margin:0;">Waiting for input...</h2>
+            <p>Your generated LaTeX will appear here.</p>
+        </div>
+
+        <div id="loading-state" class="loading-state hidden">
+            <h2>⚙️ Pipeline Running...</h2>
+            <ul style="text-align: left; opacity: 0.8; line-height: 1.8;">
+                <li>1. Parsing Job Requirements via Groq</li>
+                <li>2. Scraping GitHub Repositories</li>
+                <li>3. Calculating ATS Match Score</li>
+                <li>4. Generating LaTeX Code</li>
+            </ul>
+        </div>
+
+        <div id="results-state" class="hidden" style="display: flex; flex-direction: column; flex-grow: 1;">
+            
+            <div class="score-card">
+                <div class="score-header">
+                    <h2>ATS Match Analysis</h2>
+                    <div id="score-badge" class="score-badge">85/100</div>
+                </div>
+                <p id="feedback-text" style="margin:0; font-size: 0.95rem; line-height: 1.5;"></p>
+                <div id="missing-box" class="missing-skills hidden">
+                    <strong>Missing Skills:</strong> <span id="missing-text"></span>
+                </div>
+            </div>
+
+            <div class="code-container">
+                <div class="code-header">
+                    <span>optimized_resume.tex</span>
+                    <button class="copy-btn" onclick="copyLatex()">Copy to Clipboard</button>
+                </div>
+                <textarea id="latex-output" class="latex-output" readonly></textarea>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="cache-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>🗄️ Existing Profile Found</h3>
+            <p>We found cached GitHub projects for <strong id="modal-username"></strong>. Use the saved data for a faster generation, or fetch fresh data from GitHub?</p>
+            <div class="modal-buttons">
+                <button class="btn-fast" onclick="runPipeline(true)">Use Saved (Fast)</button>
+                <button class="btn-fresh" onclick="runPipeline(false)">Fetch Fresh</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('generate-btn');
+        const modal = document.getElementById('cache-modal');
+        
+        // Check cache before running
+        btn.addEventListener('click', () => {
+            const username = document.getElementById('username').value.trim();
+            const jd = document.getElementById('jd').value.trim();
+            
+            if (!username || !jd) {
+                alert("Please provide both a Username and a Job Description.");
+                return;
+            }
+
+            const cached = localStorage.getItem(`github_projects_${username}`);
+            if (cached) {
+                document.getElementById('modal-username').innerText = username;
+                modal.classList.remove('hidden');
+            } else {
+                runPipeline(false);
+            }
+        });
+
+        // The Main API Call
+        async function runPipeline(useCache) {
+            modal.classList.add('hidden'); // Hide modal
+            
+            // UI States
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('results-state').classList.add('hidden');
+            document.getElementById('loading-state').classList.remove('hidden');
+            btn.disabled = true;
+            btn.innerText = "Agents are analyzing...";
+
+            const jd = document.getElementById('jd').value.trim();
+            const username = document.getElementById('username').value.trim();
+
+            try {
+                // Call your FastAPI Backend
+                const response = await fetch('http://127.0.0.1:8000/api/generate-resume', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ job_description: jd })
+                });
+
+                if (!response.ok) throw new Error("Backend pipeline failed");
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    // Update UI with results
+                    document.getElementById('score-badge').innerText = `${data.ats_score.score}/100`;
+                    document.getElementById('feedback-text').innerText = data.ats_score.feedback;
+                    document.getElementById('latex-output').value = data.latex_code;
+
+                    if (data.ats_score.missing_keywords && data.ats_score.missing_keywords.length > 0) {
+                        document.getElementById('missing-box').classList.remove('hidden');
+                        document.getElementById('missing-text').innerText = data.ats_score.missing_keywords.join(', ');
+                    } else {
+                        document.getElementById('missing-box').classList.add('hidden');
+                    }
+
+                    // Simulate saving cache for returning users
+                    if (!useCache) {
+                        localStorage.setItem(`github_projects_${username}`, JSON.stringify([{ cached: true }]));
+                    }
+
+                    // Show Results
+                    document.getElementById('loading-state').classList.add('hidden');
+                    document.getElementById('results-state').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error connecting to FastAPI backend. Is your Python server running?");
+                document.getElementById('loading-state').classList.add('hidden');
+                document.getElementById('empty-state').classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Generate LaTeX Resume";
+            }
+        }
+
+        function copyLatex() {
+            const code = document.getElementById('latex-output').value;
+            navigator.clipboard.writeText(code);
+            alert("LaTeX copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
