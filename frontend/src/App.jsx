@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Code, FileText, CheckCircle, AlertTriangle, Loader2, Copy, Download } from 'lucide-react';
+import { Code, FileText, CheckCircle, AlertTriangle, Loader2, Copy, Download, Settings } from 'lucide-react';
 
 function App() {
   // Form State
@@ -15,6 +15,10 @@ function App() {
   // Result State
   const [result, setResult] = useState(null);
 
+  // Template State
+  const [templateCode, setTemplateCode] = useState('');
+  const [isUpdatingTemplate, setIsUpdatingTemplate] = useState(false);
+
   // Check for cached data when the user types a username
   const handleCheckCache = () => {
     if (!username) return;
@@ -28,6 +32,32 @@ function App() {
       generateResume(false); 
     } else {
       alert("Please paste a job description first!");
+    }
+  };
+
+  const handleUpdateTemplate = async () => {
+    if (!templateCode.trim()) {
+      alert("Please paste the LaTeX template code first!");
+      return;
+    }
+    setIsUpdatingTemplate(true);
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/api/update-template', {
+        content: templateCode
+      });
+      if (response.data.status === 'success') {
+        alert("Template successfully updated! You can now generate resumes using this template.");
+        setTemplateCode('');
+      }
+    } catch (error) {
+      console.error(error);
+      if (error.response && error.response.data && error.response.data.detail) {
+        alert("Template Error: " + error.response.data.detail);
+      } else {
+        alert("Error updating template. Check backend console or network.");
+      }
+    } finally {
+      setIsUpdatingTemplate(false);
     }
   };
 
@@ -101,7 +131,7 @@ function App() {
           </div>
 
           {/* JD Input */}
-          <div className="flex-grow flex flex-col h-64">
+          <div className="flex-grow flex flex-col h-48">
             <label className="block text-sm font-medium text-gray-700 mb-2">Job Description</label>
             <textarea 
               value={jobDescription}
@@ -109,6 +139,27 @@ function App() {
               className="w-full h-full p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none transition-all"
               placeholder="Paste the target job description here..."
             />
+          </div>
+
+          {/* Template Input */}
+          <div className="flex flex-col h-48">
+            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+              <Settings className="h-4 w-4 text-gray-500" /> Update Backend Template (Optional)
+            </label>
+            <textarea 
+              value={templateCode}
+              onChange={(e) => setTemplateCode(e.target.value)}
+              className="w-full h-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-800 focus:border-gray-800 outline-none resize-none transition-all text-xs font-mono bg-gray-50"
+              placeholder="Paste raw LaTeX here. Must contain {{DYNAMIC_OBJECTIVE_PLACEHOLDER}} and {{DYNAMIC_PROJECTS_PLACEHOLDER}}"
+            />
+            <button 
+              onClick={handleUpdateTemplate}
+              disabled={isUpdatingTemplate || !templateCode.trim()}
+              className="mt-2 w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 text-sm"
+            >
+              {isUpdatingTemplate ? <Loader2 className="animate-spin h-4 w-4" /> : <Settings className="h-4 w-4" />}
+              {isUpdatingTemplate ? "Updating Template..." : "Overwrite Template"}
+            </button>
           </div>
         </div>
 

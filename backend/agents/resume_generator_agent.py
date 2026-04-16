@@ -29,13 +29,13 @@ class ResumeGeneratorAgent:
             
         # PROMPT 1: Generate the Objective
         objective_prompt = f"""
-        Write a highly professional, 2-line resume objective specifically tailored to this job description:
+        Write a highly professional resume objective specifically tailored to this job description:
         {parsed_jd}
         
         CRITICAL RULES:
-        1. Output ONLY the objective text. 
-        2. Do not use quotes, bolding, or markdown.
-        3. Do not include introductory text like "Here is your objective".
+        1. Maximum of 2 sentences. It must be highly concise and action-oriented.
+        2. NO CHATTER. Output ONLY the raw objective text. 
+        3. Do not use quotes, bolding, markdown formatting blocks, or introductory phrases.
         """
 
         # PROMPT 2: Generate the Projects
@@ -46,20 +46,19 @@ class ResumeGeneratorAgent:
         Selected Projects Data (USE THESE EXACT URLS): {selected_projects}
         
         CRITICAL RULES for Writing Project Bullet Points:
-        1. NO PARAGRAPHS. You MUST explain the project using EXACTLY 3 bullet points per project. NEVER 4 or 5.
-        2. BE EXTREMELY SPACE EFFICIENT. Each bullet point MUST be a single, punchy sentence (under 15 words). Do not let bullet points wrap to multiple lines.
+        1. NO PARAGRAPHS. You MUST explain the project using EXACTLY TWO (2) bullet points per project. NEVER 3 or more.
+        2. BE EXTREMELY SPACE EFFICIENT. Each bullet point must be a maximum of 1-2 lines long. Keep it highly concise and action-oriented.
         3. KEYWORD INJECTION: You MUST naturally integrate the specific tools, core skills, and domain knowledge from the Job Requirements exactly as they appear in the parsed JSON. This is critical for ATS selection.
         4. Do not output any more projects than the ones provided in the Selected Projects Data. Only output the provided projects (maximum 3).
         5. You MUST extract the exact GitHub URL from the provided data for each project. DO NOT use 'your-username' or placeholders.
-        6. Output ONLY the raw LaTeX code. DO NOT output conversational text. Start immediately with \\resumeProjectHeading.
+        6. NO CHATTER. You must output ONLY raw LaTeX code. You must never output conversational text, markdown formatting blocks (like ```latex), or introductory phrases. Start immediately with \\resumeProjectHeading.
         
         Output exact structure for each project:
         \\resumeProjectHeading
           {{\\href{{[EXACT_GITHUB_URL]}}{{\\textbf{{[PROJECT_NAME]}}}} $|$ \\emph{{[TECH_STACK]}}}}{{[YEAR/MONTH]}}
           \\resumeItemListStart
-            \\resumeItem{{[Single, punchy 1-liner combining tech stack & ATS keywords]}}
-            \\resumeItem{{[Single, punchy 1-liner demonstrating impact/result]}}
-            \\resumeItem{{[Single, punchy 1-liner addressing core domain knowledge]}}
+            \\resumeItem{{[Highly concise, action-oriented bullet point 1 integrating ATS keywords (max 1-2 lines)]}}
+            \\resumeItem{{[Highly concise, action-oriented bullet point 2 demonstrating impact/result (max 1-2 lines)]}}
           \\resumeItemListEnd
         """
 

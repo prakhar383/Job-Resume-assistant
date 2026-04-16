@@ -25,6 +25,9 @@ app.add_middleware(
 class GenerateRequest(BaseModel):
     job_description: str
 
+class TemplateRequest(BaseModel):
+    content: str
+
 @app.get("/")
 def read_root():
     return {"status": "FastAPI Master Server is running."}
@@ -67,6 +70,34 @@ def generate_resume(request: GenerateRequest):
         traceback.print_exc()
         print(f"Pipeline Error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/update-template")
+def update_template(request: TemplateRequest):
+    try:
+        content = request.content
+        
+        # 1. Verification logic
+        if "{{DYNAMIC_OBJECTIVE_PLACEHOLDER}}" not in content:
+            raise HTTPException(status_code=400, detail="Missing required placeholder: {{DYNAMIC_OBJECTIVE_PLACEHOLDER}}")
+            
+        if "{{DYNAMIC_PROJECTS_PLACEHOLDER}}" not in content:
+            raise HTTPException(status_code=400, detail="Missing required placeholder: {{DYNAMIC_PROJECTS_PLACEHOLDER}}")
+            
+        # 2. Write logic
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        template_path = os.path.join(current_dir, "templates", "base_resume.tex")
+        
+        with open(template_path, "w", encoding="utf-8") as file:
+            file.write(content)
+            
+        return {
+            "status": "success",
+            "message": "Template successfully updated."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update template: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn

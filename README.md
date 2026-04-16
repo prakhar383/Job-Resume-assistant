@@ -99,7 +99,8 @@ Once both servers are running successfully, your terminal will provide a localho
 1. Open your web browser and navigate precisely to **[http://localhost:5173/](http://localhost:5173/)**.
 2. Input a target **GitHub Username**.
 3. Paste the complete text of your desired **Job Description** into the designated text area.
-4. Click **Generate LaTeX Resume** to instantly trigger the multi-agent pipeline and receive your custom-tailored ATS resume code.
+4. *(Optional)* Use the **Template Configuration** box to paste your own custom LaTeX template. Ensuring it contains `{{DYNAMIC_OBJECTIVE_PLACEHOLDER}}` and `{{DYNAMIC_PROJECTS_PLACEHOLDER}}`, click **Update Template** to securely overwrite the backend configuration on the fly.
+5. Click **Generate LaTeX Resume** to instantly trigger the multi-agent AI pipeline. It natively enforces strict 1-page constraints (e.g., max 2 lines per bullet, zero chat text) and returns your custom-tailored ATS resume code.
 
 ---
 *Created dynamically to streamline rigorous technical job application workflows.*
